@@ -129,15 +129,4 @@ if file:
         ax.set_ylabel("True")
         st.pyplot(fig)
 
-        # ========= Prediction =========
-        st.subheader("Make a Prediction")
-        age = st.number_input("Age", 0, 120, 30)
-        bmi = st.number_input("BMI", 0.0, 50.0, 25.0)
-        hba1c = st.number_input("HbA1c", 0.0, 20.0, 5.0)
-        chol = st.number_input("Cholesterol", 0.0, 500.0, 200.0)
-
-        if st.button("Predict"):
-            sample = pd.DataFrame([[age, bmi, hba1c, chol]], columns=["AGE","BMI","HbA1c","Chol"])
-            sample = scaler.transform(sample)
-            pred = model.predict(sample)[0]
-            st.success("Diabetic" if pred==1 else "Not Diabetic")
+     
