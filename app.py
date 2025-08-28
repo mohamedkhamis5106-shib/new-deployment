@@ -5,7 +5,7 @@ import seaborn as sns
 from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import StandardScaler, LabelEncoder
 from sklearn.linear_model import LogisticRegression
-from sklearn.metrics import accuracy_score, confusion_matrix
+from sklearn.metrics import accuracy_score, confusion_matrix, classification_report
 from sklearn import svm
 from sklearn.tree import DecisionTreeClassifier
 
@@ -15,9 +15,6 @@ st.title("🩺 Diabetes Prediction App (Simple Version)")
 
 # ========= Upload dataset =========
 file = st.file_uploader("Upload dataset (CSV)", type=["csv"])
-
-def classification_report(y_true, y_pred):
-    raise NotImplementedError
 
 if file:
     df = pd.read_csv(file)
