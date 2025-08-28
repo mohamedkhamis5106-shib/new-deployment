@@ -32,7 +32,8 @@ if file:
 
     if st.checkbox("Show correlation heatmap"):
         fig2, ax2 = plt.subplots()
-        sns.heatmap(df.corr(), annot=True, cmap="coolwarm", ax=ax2)
+        numeric_df = df.select_dtypes(include=["int64","float64"])
+        sns.heatmap(numeric_df.corr(), annot=True, cmap="coolwarm", ax=ax2)
         st.pyplot(fig2)
 
     if st.checkbox("Show pairplot"):
