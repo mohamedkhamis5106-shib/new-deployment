@@ -1,132 +1,60 @@
 import streamlit as st
 import pandas as pd
-import matplotlib.pyplot as plt
-import seaborn as sns
-from sklearn.model_selection import train_test_split
-from sklearn.preprocessing import StandardScaler, LabelEncoder
-from sklearn.linear_model import LogisticRegression
-from sklearn.metrics import accuracy_score, confusion_matrix, classification_report
-from sklearn import svm
-from sklearn.tree import DecisionTreeClassifier
 import joblib
 
 st.set_page_config(page_title="Diabetes Prediction", layout="centered")
+st.title("🔮 Diabetes Prediction App")
 
-st.title("🩺 Diabetes Prediction App (Simple Version)")
+# محاولة تحميل الموديل والـ scaler
+try:
+    model = joblib.load("log_model.pkl")
+    scaler = joblib.load("scaler.pkl")
+    st.success("✅ Model and Scaler loaded successfully!")
+except:
+    st.error("⚠️ Model or Scaler not found. Please train and save them first.")
 
-# ========= Upload dataset =========
-file = st.file_uploader("Upload dataset (CSV)", type=["csv"])
+st.subheader("Enter Patient Data")
 
-if file:
-    df = pd.read_csv(file)
-    st.subheader("Dataset Preview")
-    
-    # ========= EDA =========
-    st.subheader("Exploratory Data Analysis")
-    col = st.selectbox("Choose a numeric column for histogram", df.select_dtypes(include=["int64","float64"]).columns)
-    fig, ax = plt.subplots()
-    sns.histplot(df[col], kde=True, ax=ax)
-    st.pyplot(fig)
+with st.form("prediction_form"):
+    col1, col2 = st.columns(2)
+    with col1:
+        age = st.number_input("Age", 0, 120, 30)
+        bmi = st.number_input("BMI", 0.0, 50.0, 25.0)
+    with col2:
+        hba1c = st.number_input("HbA1c", 0.0, 20.0, 5.0)
+        chol = st.number_input("Cholesterol", 0.0, 500.0, 200.0)
 
-    if st.checkbox("Show correlation heatmap"):
-        fig2, ax2 = plt.subplots()
-        numeric_df = df.select_dtypes(include=["int64","float64"])
-        sns.heatmap(numeric_df.corr(), annot=True, cmap="coolwarm", ax=ax2)
-        st.pyplot(fig2)
+    submitted = st.form_submit_button("Predict")
 
-    if st.checkbox("Show pairplot"):
-        st.info("This may take some time if dataset is large.")
-        fig3 = sns.pairplot(df, hue="CLASS", diag_kind="kde")
-        st.pyplot(fig3)
+if submitted:
+    try:
+        sample = pd.DataFrame([[age, bmi, hba1c, chol]], columns=["AGE", "BMI", "HbA1c", "Chol"])
+        sample = scaler.transform(sample)
+        pred = model.predict(sample)[0]
 
+        if pred == 1:
+            st.error("⚠️ The patient is Diabetic")
+        else:
+            st.success("✅ The patient is Not Diabetic")
+    except Exception as e:
+        st.error(f"Prediction error: {e}")
 
-    # ========= Data Preprocessing =========
-    if "Gender" in df.columns:
-        df["Gender"] = df["Gender"].map({"M":1,"F":0})
+st.subheader("Batch Prediction from CSV")
 
-    if "CLASS" in df.columns:
-        
-        df["CLASS"] = df["CLASS"].astype(str).str.strip()
+csv_file = st.file_uploader("Upload CSV file for batch prediction", type=["csv"])
+if csv_file:
+    try:
+        data = pd.read_csv(csv_file)
+        st.write("📄 Uploaded Data Preview:", data.head())
 
-        if df["CLASS"].dtype == "object":
-            le = LabelEncoder()
-            df["CLASS"] = le.fit_transform(df["CLASS"])
+        data_scaled = scaler.transform(data)
+        preds = model.predict(data_scaled)
 
+        data["Prediction"] = ["Diabetic" if p == 1 else "Not Diabetic" for p in preds]
+        st.success("✅ Predictions done successfully!")
+        st.dataframe(data)
 
-        df = df.dropna()
-    # ========= Training =========
-        if st.button("Train Models"):
-            X = df.drop(["ID", "No_Pation", "CLASS"], axis=1, errors="ignore")
-            y = df["CLASS"]
-        
-            X = X.select_dtypes(include=["int64", "float64"])
-
-
-            X = X.fillna(X.mean())
-            y = y.fillna(y.mode()[0])  
-            y = y.astype(int)
-            scaler = StandardScaler()
-            X = scaler.fit_transform(X)
-        
-            X_train, X_test, y_train, y_test = train_test_split(
-                X, y, test_size=0.2, random_state=42
-            )
-        
-            log_model = LogisticRegression(max_iter=1000)
-            log_model.fit(X_train, y_train)
-            y_pred_log = log_model.predict(X_test)
-            st.subheader("Logistic Regression Results")
-            st.write("Accuracy:", accuracy_score(y_test, y_pred_log))
-            st.text("Classification Report:\n" + classification_report(y_test, y_pred_log))
-        
-            fig, ax = plt.subplots()
-            sns.heatmap(confusion_matrix(y_test, y_pred_log), annot=True, fmt="d", cmap="Blues", ax=ax)
-            ax.set_xlabel("Predicted")
-            ax.set_ylabel("True")
-            st.pyplot(fig)
-        
-            tr = DecisionTreeClassifier(class_weight="balanced")
-            tr.fit(X_train, y_train)
-            y_pred_tr = tr.predict(X_test)
-            st.subheader("Decision Tree Results")
-            st.write("Accuracy:", accuracy_score(y_test, y_pred_tr))
-            st.text("Classification Report:\n" + classification_report(y_test, y_pred_tr))
-        
-            fig, ax = plt.subplots()
-            sns.heatmap(confusion_matrix(y_test, y_pred_tr), annot=True, fmt="d", cmap="Greens", ax=ax)
-            ax.set_xlabel("Predicted")
-            ax.set_ylabel("True")
-            st.pyplot(fig)
-            joblib.dump(log_model, "log_model.pkl")
-            joblib.dump(scaler, "scaler.pkl")
-            st.success("✅ Model and Scaler saved successfully!")
-        
-            model = svm.SVC(decision_function_shape="ovr")
-            model.fit(X_train, y_train)
-            y_pred_svm = model.predict(X_test)
-            st.subheader("SVM Results")
-            st.write("Accuracy:", accuracy_score(y_test, y_pred_svm))
-            st.text("Classification Report:\n" + classification_report(y_test, y_pred_svm))
-        
-            fig, ax = plt.subplots()
-            sns.heatmap(confusion_matrix(y_test, y_pred_svm), annot=True, fmt="d", cmap="Oranges", ax=ax)
-            ax.set_xlabel("Predicted")
-            ax.set_ylabel("True")
-            st.pyplot(fig)
-
-
-        # SVM
-        model = svm.SVC(decision_function_shape="ovr")
-        model.fit(X_train, y_train)
-        y_pred_svm = model.predict(X_test)
-        st.subheader("SVM Results")
-        st.write("Accuracy:", accuracy_score(y_test, y_pred_svm))
-        st.text("Classification Report:\n" + classification_report(y_test, y_pred_svm))
-
-        fig, ax = plt.subplots()
-        sns.heatmap(confusion_matrix(y_test, y_pred_svm), annot=True, fmt="d", cmap="Oranges", ax=ax)
-        ax.set_xlabel("Predicted")
-        ax.set_ylabel("True")
-        st.pyplot(fig)
-
-     
+        csv_out = data.to_csv(index=False).encode("utf-8")
+        st.download_button("Download Predictions CSV", csv_out, "predictions.csv", "text/csv")
+    except Exception as e:
+        st.error(f"Batch prediction error: {e}")
