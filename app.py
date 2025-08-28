@@ -57,10 +57,11 @@ if file:
         if st.button("Train Models"):
             X = df.drop(["ID","No_Pation","CLASS"], axis=1)
             y = df["CLASS"]
-
+            X = X.select_dtypes(include=["int64", "float64"])
+            X = X.fillna(X.mean())
             scaler = StandardScaler()
             X = scaler.fit_transform(X)
-            X = X.fillna(X.mean())
+
             X_train, X_test, y_train, y_test = train_test_split(X,y,test_size=0.2,random_state=42)
 
         # Logistic Regression
