@@ -53,6 +53,7 @@ if file:
 
     # ========= Training =========
         if st.button("Train Models"):
+            df = df.dropna()
             X = df.drop(["ID","No_Pation","CLASS"], axis=1)
             y = df["CLASS"]
 
