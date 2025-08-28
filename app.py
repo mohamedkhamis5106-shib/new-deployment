@@ -51,9 +51,10 @@ if file:
             le = LabelEncoder()
             df["CLASS"] = le.fit_transform(df["CLASS"])
 
+
+        df = df.dropna()
     # ========= Training =========
         if st.button("Train Models"):
-            df = df.dropna()
             X = df.drop(["ID","No_Pation","CLASS"], axis=1)
             y = df["CLASS"]
 
