@@ -8,6 +8,7 @@ from sklearn.linear_model import LogisticRegression
 from sklearn.metrics import accuracy_score, confusion_matrix, classification_report
 from sklearn import svm
 from sklearn.tree import DecisionTreeClassifier
+import joblib
 
 st.set_page_config(page_title="Diabetes Prediction", layout="centered")
 
@@ -59,8 +60,11 @@ if file:
             y = df["CLASS"]
         
             X = X.select_dtypes(include=["int64", "float64"])
+
+
             X = X.fillna(X.mean())
-        
+            y = y.fillna(y.mode()[0])  
+            y = y.astype(int)
             scaler = StandardScaler()
             X = scaler.fit_transform(X)
         
@@ -93,6 +97,9 @@ if file:
             ax.set_xlabel("Predicted")
             ax.set_ylabel("True")
             st.pyplot(fig)
+            joblib.dump(log_model, "log_model.pkl")
+            joblib.dump(scaler, "scaler.pkl")
+            st.success("✅ Model and Scaler saved successfully!")
         
             model = svm.SVC(decision_function_shape="ovr")
             model.fit(X_train, y_train)
