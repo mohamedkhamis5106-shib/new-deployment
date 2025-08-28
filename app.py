@@ -55,42 +55,58 @@ if file:
         df = df.dropna()
     # ========= Training =========
         if st.button("Train Models"):
-            X = df.drop(["ID","No_Pation","CLASS"], axis=1)
+            X = df.drop(["ID", "No_Pation", "CLASS"], axis=1, errors="ignore")
             y = df["CLASS"]
+        
             X = X.select_dtypes(include=["int64", "float64"])
             X = X.fillna(X.mean())
+        
             scaler = StandardScaler()
             X = scaler.fit_transform(X)
+        
+            X_train, X_test, y_train, y_test = train_test_split(
+                X, y, test_size=0.2, random_state=42
+            )
+        
+            log_model = LogisticRegression(max_iter=1000)
+            log_model.fit(X_train, y_train)
+            y_pred_log = log_model.predict(X_test)
+            st.subheader("Logistic Regression Results")
+            st.write("Accuracy:", accuracy_score(y_test, y_pred_log))
+            st.text("Classification Report:\n" + classification_report(y_test, y_pred_log))
+        
+            fig, ax = plt.subplots()
+            sns.heatmap(confusion_matrix(y_test, y_pred_log), annot=True, fmt="d", cmap="Blues", ax=ax)
+            ax.set_xlabel("Predicted")
+            ax.set_ylabel("True")
+            st.pyplot(fig)
+        
+            tr = DecisionTreeClassifier(class_weight="balanced")
+            tr.fit(X_train, y_train)
+            y_pred_tr = tr.predict(X_test)
+            st.subheader("Decision Tree Results")
+            st.write("Accuracy:", accuracy_score(y_test, y_pred_tr))
+            st.text("Classification Report:\n" + classification_report(y_test, y_pred_tr))
+        
+            fig, ax = plt.subplots()
+            sns.heatmap(confusion_matrix(y_test, y_pred_tr), annot=True, fmt="d", cmap="Greens", ax=ax)
+            ax.set_xlabel("Predicted")
+            ax.set_ylabel("True")
+            st.pyplot(fig)
+        
+            model = svm.SVC(decision_function_shape="ovr")
+            model.fit(X_train, y_train)
+            y_pred_svm = model.predict(X_test)
+            st.subheader("SVM Results")
+            st.write("Accuracy:", accuracy_score(y_test, y_pred_svm))
+            st.text("Classification Report:\n" + classification_report(y_test, y_pred_svm))
+        
+            fig, ax = plt.subplots()
+            sns.heatmap(confusion_matrix(y_test, y_pred_svm), annot=True, fmt="d", cmap="Oranges", ax=ax)
+            ax.set_xlabel("Predicted")
+            ax.set_ylabel("True")
+            st.pyplot(fig)
 
-            X_train, X_test, y_train, y_test = train_test_split(X,y,test_size=0.2,random_state=42)
-
-        # Logistic Regression
-        log_model = LogisticRegression(max_iter=1000)
-        log_model.fit(X_train, y_train)
-        y_pred_log = log_model.predict(X_test)
-        st.subheader("Logistic Regression Results")
-        st.write("Accuracy:", accuracy_score(y_test, y_pred_log))
-        st.text("Classification Report:\n" + classification_report(y_test, y_pred_log))
-
-        fig, ax = plt.subplots()
-        sns.heatmap(confusion_matrix(y_test, y_pred_log), annot=True, fmt="d", cmap="Blues", ax=ax)
-        ax.set_xlabel("Predicted")
-        ax.set_ylabel("True")
-        st.pyplot(fig)
-
-        # Decision Tree
-        tr = DecisionTreeClassifier(class_weight="balanced")
-        tr.fit(X_train, y_train)
-        y_pred_tr = tr.predict(X_test)
-        st.subheader("Decision Tree Results")
-        st.write("Accuracy:", accuracy_score(y_test, y_pred_tr))
-        st.text("Classification Report:\n" + classification_report(y_test, y_pred_tr))
-
-        fig, ax = plt.subplots()
-        sns.heatmap(confusion_matrix(y_test, y_pred_tr), annot=True, fmt="d", cmap="Greens", ax=ax)
-        ax.set_xlabel("Predicted")
-        ax.set_ylabel("True")
-        st.pyplot(fig)
 
         # SVM
         model = svm.SVC(decision_function_shape="ovr")
